@@ -1,12 +1,13 @@
 import numpy as np
-def length_2d(v: tuple[int,int])-> float:
+from typing import Tuple
+def length_2d(v: Tuple[int,int])-> float:
     v=np.array(v)
     return(v[0]*v[0]+v[1]*v[1])**0.5
 
 def signed_dist_to_circle(point,center,radius):
     return length_2d(center-point)-radius
 
-def signed_dist_to_square(point: tuple[int,int],center: tuple[int,int],size: tuple[int,int]):
+def signed_dist_to_square(point: Tuple[int,int],center: Tuple[int,int],size: Tuple[int,int]):
     point=np.array(point)
     center=np.array(center)
     size=np.array(size)/2
