@@ -4,6 +4,7 @@ from src.camera import RayMarchCamera
 from src.ray_marchobject import Sphere, FuzzySphere
 
 class PyGameWindowRenderer:
+    #simple pygame logic
     #simple class to render the game state render window from np array
     def __init__(self, width: int, height: int):
         self.screen_width = width

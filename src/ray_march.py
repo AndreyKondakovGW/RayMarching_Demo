@@ -39,7 +39,6 @@ def ray_march(origin, direction, world) -> np.array:
     for i in range(number_of_steps):
         current_position = origin + total_distance_traveled * direction
         distance_to_closest = 0
-        #TODO distance_to_closest = dist to clocest object
         distance_to_closest, color = closest_dist_in_world(current_position, world)
 
         if distance_to_closest < min_hit_distance:

@@ -68,6 +68,7 @@ class RayMarchCamera:
 
 
     def set_all_rays(self, pixel_width, pixel_height):
+        #calculate all rays directions
         self.all_rays = np.zeros((pixel_width, pixel_height, 3))
         for x in range(pixel_width):
             for y in range(pixel_height):
