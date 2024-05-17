@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import src.distances as distances
 
 class RayMarchObject(ABC):
     @abstractmethod
@@ -10,7 +11,7 @@ class RayMarchObject(ABC):
     def get_color(self):
         pass
 
-max_figure_params = 5
+max_figure_params = 10
 
 class Sphere():
     def __init__(self, center, radius, color = np.array([1,0,0])):
@@ -20,8 +21,8 @@ class Sphere():
         self.color = color
 
     def distance2point(self, point: np.array):
-        return np.linalg.norm(self.center - point) - self.radius
-    
+        return distances.distance_from_sphere(self.center-point,self.radius)
+
     @property
     def get_color(self):
         return self.color
@@ -58,4 +59,142 @@ class FuzzySphere():
         res[4] = self.radius
         res[5:8] = self.center
         res[8] = self.scaler
+        return res
+
+
+class Box(RayMarchObject):
+    def __init__(self, center, half_sides, color = np.array([1,0,0])):
+        self.id=2
+        self.center = center
+        self.half_sides = half_sides
+        self.color = color
+
+    def distance2point(self, point):
+        d=distances.distance_from_box(self.center-point,self.half_sides)
+        #print(d)
+        return d
+
+    def get_color(self):
+        return self.color
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4:7] = self.half_sides
+        res[7:10] = self.center
+        return res
+
+
+class RoundBox(RayMarchObject):
+    def __init__(self, center, half_sides, rounding, color = np.array([1,0,0])):
+        self.id=3
+        self.center = center
+        self.half_sides = half_sides
+        self.roundig=rounding
+        self.color = color
+
+    def distance2point(self, point):
+        return distances.distance_from_round_box(self.center-point,self.half_sides,self.roundig)
+
+    def get_color(self):
+        return self.color
+
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4] = self.roundig
+        res[5:8] = self.half_sides
+        res[8:11] = self.center
+        return res
+
+
+class FrameBox(RayMarchObject):
+    def __init__(self, center, half_sides, thickness, color = np.array([1,0,0])):
+        self.id=4
+        self.center = center
+        self.half_sides = half_sides
+        self.thickness=thickness
+        self.color = color
+
+    def distance2point(self, point):
+        return distances.distance_from_frame_box(self.center-point,self.half_sides,self.thickness)
+
+    def get_color(self):
+        return self.color
+    
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4] = self.thickness
+        res[5:8] = self.half_sides
+        res[8:11] = self.center
+        return res
+
+class Torus(RayMarchObject):
+    def __init__(self, center, radi, color = np.array([1,0,0])):
+        self.id=5
+        self.center = center
+        self.radi = radi
+        self.color = color
+
+    def distance2point(self, point):
+        return distances.distance_from_torus(self.center-point,self.radi)
+
+    def get_color(self):
+        return self.color
+    
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4:6] = self.radi
+        res[6:9] = self.center
+        return res
+
+class Cylinder(RayMarchObject):
+    def __init__(self, center, radius,height ,color = np.array([1,0,0])):
+        self.id=6
+        self.center = center
+        self.radius = radius
+        self.height = height
+        self.color = color
+
+    def distance2point(self, point):
+        return distances.distance_from_cylinder(self.center-point,self.radius,self.height)
+
+    def get_color(self):
+        return self.color
+    
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4] = self.height
+        res[5] = self.radius
+        res[6:9] = self.center
+        return res
+
+class Cone(RayMarchObject):
+    def __init__(self, center, c, height, color = np.array([1,0,0])):
+        self.id=7
+        self.center = center
+        self.c = c
+        self.height = height
+        self.color = color
+
+    def distance2point(self, point):
+        return distances.distance_from_cone(self.center-point,self.c,self.height)
+
+    def get_color(self):
+        return self.color
+    
+    def to_array(self):
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4] = self.height
+        res[5:7] = self.c
+        res[7:10] = self.center
         return res
