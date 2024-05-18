@@ -11,7 +11,6 @@ def sphere(origin_x, origin_y, origin_z, r, center_x, center_y, center_z):
 
 #object type 2
 @cuda.jit(device=True)
-def fuzzy_sphere(origin_x, origin_y, origin_z, r, center_x, center_y, center_z):
-    scaler = 5
+def fuzzy_sphere(origin_x, origin_y, origin_z, r, center_x, center_y, center_z, scaler):
     displacement = math.sin(scaler * origin_x) * math.sin(scaler * origin_y) * math.sin(scaler * origin_z) * 0.25 * r
     return math.sqrt((origin_x - center_x) ** 2 + (origin_y - center_y) ** 2 + (origin_z - center_z) ** 2) - r + displacement

@@ -1,26 +1,7 @@
 import numpy as np
-from src.ray_march import ray_march, ray_march_kernel
+from src.ray_march_cuda import ray_march_kernel
 from numba import jit
-from numba import int32, float64
-from numba.experimental import jitclass
 from numba import cuda
-
-spec = [
-    ('pos', float64[:]),
-    ('dir', float64[:]),
-    ('fov', int32),
-    ('aspect_ratio', float64),
-    ('near', float64),
-    ('far', float64),
-    ('screne_center', float64[:]),
-    ('screne_width', float64),
-    ('screne_height', float64),
-    ('projection_matrix', float64[:,:]),
-    ('lookAtMatrix', float64[:,:]),
-    ('all_rays', float64[:,:,:]),
-    ('right', float64[:]),
-    ('up', float64[:]),
-]
 
 #Cuda kernel for get_all_rays
 @cuda.jit

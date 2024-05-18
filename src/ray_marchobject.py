@@ -12,16 +12,8 @@ class RayMarchObject(ABC):
     def get_color(self):
         pass
 
-spec = [
-    ('center', float64[:]),
-    ('radius', float64),             
-    ('color', float64[:]),
-    ('id', int32),
-]
+max_figure_params = 5
 
-max_figure_params = 4
-
-@jitclass(spec)
 class Sphere():
     def __init__(self, center, radius, color = np.array([1,0,0])):
         self.id = 0
@@ -52,19 +44,20 @@ class FuzzySphere():
         self.center = center
         self.radius = radius
         self.color = color
+        self.scaler = 5.0
 
-    def distance2point(self, point):
-        scaler = 5.0 
-        displacement = np.sin(scaler * point[0]) * np.sin(scaler* point[1]) * np.sin(scaler* point[2]) * 0.25 * self.radius
+    def distance2point(self, point): 
+        displacement = np.sin(self.scaler * point[0]) * np.sin(self.scaler* point[1]) * np.sin(self.scaler* point[2]) * 0.25 * self.radius
         return np.linalg.norm(self.center - point) - self.radius + displacement
     def get_color(self):
         return self.color
     
     def to_array(self):
-        # every sphere encoded with [id, color_r, color_g, color_b, radius, center_x, center_y, center_z]
+        # every sphere encoded with [id, color_r, color_g, color_b, radius, center_x, center_y, center_z, scaler]
         res = np.zeros(4 + max_figure_params)
         res[0] = self.id
         res[1:4] = self.color
         res[4] = self.radius
         res[5:8] = self.center
+        res[8] = self.scaler
         return res
