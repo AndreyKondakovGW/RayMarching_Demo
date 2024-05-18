@@ -98,20 +98,15 @@ def get_all_rays_satatic(pixel_width, pixel_height, screne_width, screne_height,
 
 #@jitclass(spec)
 class RayMarchCamera:
-    def __init__(self, pos = np.array([0,0,0]), target = np.array([1,0,0]), fov = 90, aspect=1):
+    def __init__(self, pos = np.array([0,0,0]), target = np.array([1,0,0]), fov = 90, screne_width = 1, screne_height = 1):
         self.pos = pos
         dir = target - pos
         self.dir = dir
         self.dir = self.dir / np.linalg.norm(self.dir)
         self.fov = fov
-        self.aspect_ratio = aspect
+        self.aspect_ratio =  screne_height / screne_width
         self.near = 1.0
         self.far = 1000.0
-
-        dist_to_screen = 1.0
-        self.screne_center = self.pos + self.dir * dist_to_screen
-        self.screne_width = 2 * dist_to_screen * np.tan(np.radians(self.fov/2))
-        self.screne_height = self.screne_width
 
         self.projection_matrix = self.get_projection()
         self.count_axis_param()
@@ -147,22 +142,18 @@ class RayMarchCamera:
         a = (self.far + self.near) / (self.far - self.near)
         b = (2 * self.far * self.near) / (self.far - self.near)
         
-
-        return np.array([
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, -1.0, -1.0],
-            [0.0, 0.0, -0.2, 0.0]
-        ], dtype=np.float64)
         return np.array([
             [f * aspect, 0, 0, 0],
             [0, f, 0, 0],
             [0, 0, -a, -1],
             [0, 0, b, 0]
-        ], dtype=np.float64).T
+        ], dtype=np.float64)
     
     def get_window_content(self, pixel_width, pixel_height, world):
         output = np.zeros((pixel_width, pixel_height, 3), dtype=np.float64)
+        objects_buffer = np.array([obj.to_array() for obj in world], dtype=np.float64)
+
+
         threadsperblock = (16, 16)
         blockspergrid_x = int(np.ceil(pixel_width / threadsperblock[0]))
         blockspergrid_y = int(np.ceil(pixel_height / threadsperblock[1]))
@@ -170,12 +161,9 @@ class RayMarchCamera:
         stream = cuda.stream()
         d_all_rays = cuda.to_device(self.all_rays, stream)
         d_output = cuda.to_device(output, stream)
-        ray_march_kernel[blockspergrid, threadsperblock](d_output, 0,0,0, d_all_rays)
-        #wait for kernel to finish
-        stream.synchronize()
+        d_objects_buffer = cuda.to_device(objects_buffer, stream)
+        ray_march_kernel[blockspergrid, threadsperblock](d_output, 0,0,0, d_all_rays, d_objects_buffer)
         output = d_output.copy_to_host(stream=stream)
-        print(self.all_rays[pixel_width//2, pixel_height//2 + 1])
-        print(output[pixel_width//2, pixel_height//2 + 1])
         return (output * 255).astype(np.uint8)
 
     def set_all_rays(self, pixel_width, pixel_height):
@@ -192,8 +180,6 @@ class RayMarchCamera:
         get_all_rays_kernel[blockspergrid, threadsperblock](d_all_rays,
                                                              pixel_width, pixel_height,
                                                              d_projetion_matrix, d_lookAtMatrix)
-        #wait for kernel to finish
-        stream.synchronize()
         self.all_rays = d_all_rays.copy_to_host(stream=stream)
         #self.all_rays = get_all_rays_satatic(pixel_width, pixel_height, self.screne_width, self.screne_height, self.projection_matrix, self.lookAtMatrix)
 

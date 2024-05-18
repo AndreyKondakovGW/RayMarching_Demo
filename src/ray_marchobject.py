@@ -19,7 +19,6 @@ spec = [
     ('id', int32),
 ]
 
-
 max_figure_params = 4
 
 @jitclass(spec)
@@ -47,8 +46,9 @@ class Sphere():
         return res
     
 
-class FuzzySphere(RayMarchObject):
+class FuzzySphere():
     def __init__(self, center, radius, color = np.array([1,0,0])):
+        self.id = 1
         self.center = center
         self.radius = radius
         self.color = color
