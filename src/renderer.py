@@ -2,6 +2,7 @@ import pygame
 import numpy as np
 from src.camera import RayMarchCamera
 from src.ray_marchobject import Sphere, FuzzySphere
+import time
 
 class PyGameWindowRenderer:
     #simple pygame logic
@@ -11,11 +12,13 @@ class PyGameWindowRenderer:
         self.screen_height = height
         self.screen = pygame.display.set_mode((width, height))
         
-        self.world = [FuzzySphere(np.array([10, 0, 0]), 1, np.array([0, 1, 0])), Sphere(np.array([5, 1, 0]), 0.1, np.array([1, 1, 0])), Sphere(np.array([5, -1, 0]), 0.1, np.array([1, 0, 1]))]
+        self.world = [Sphere(np.array([5, 1, 0], dtype=np.float64), 0.1, np.array([1, 1, 0], dtype=np.float64))]
 
-        self.camera = RayMarchCamera(pos = np.array([0,0,0]), target=np.array([10,0,0]))
+        self.camera = RayMarchCamera(pos = np.array([0,0,0], dtype=np.float64), target=np.array([10,0,0], dtype=np.float64))
+        start = time.time()
         self.camera.set_all_rays(self.screen_width, self.screen_height)
         self.window_content = self.camera.get_window_content(self.screen_width, self.screen_height, self.world)
+        print(f"Time to render {width}x{height}: {time.time() - start:.2f} sec", )
 
     def mainloop(self):
         running = True
