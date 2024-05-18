@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-from numba import int32, float64
-from numba.experimental import jitclass
 import numpy as np
 
 class RayMarchObject(ABC):

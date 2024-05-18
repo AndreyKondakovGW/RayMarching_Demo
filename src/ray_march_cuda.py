@@ -8,9 +8,31 @@ number_of_steps = 64
 min_hit_distance = 0.01
 max_trace_distabce = 100
 background_color = np.array([0,0,0])
+@cuda.jit
+def clamp(n, min, max): 
+    if n < min: 
+        return min
+    elif n > max: 
+        return max
+    else: 
+        return n 
+
+@cuda.jit
+def mix(a, b, k):
+    return a * (1.0 - k) + b * k
+
+@cuda.jit
+def smin(a, b, k):
+    k *= 1.0/(1.0-math.sqrt(0.5))
+    h = max( k-abs(a-b), 0.0 )/k
+    return min(a,b) - k*0.5*(1.0+h-math.sqrt(1.0-h*(h-2.0)))
 
 @cuda.jit
 def find_closest_obj(pos_x, pos_y, pos_z, object_buffer):
+    '''
+    Function which iterates over all objects in object_buffer and finds the closest object to the point pos_x, pos_y, pos_z
+    return distance to this object and its color
+    '''
     closest_dist = np.inf
     r = 0
     g = 0
@@ -20,7 +42,15 @@ def find_closest_obj(pos_x, pos_y, pos_z, object_buffer):
             dist = sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7])
         elif obj[0] == 1:
             dist = fuzzy_sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7], obj[8])
-        if dist < closest_dist:
+        if abs(dist - closest_dist) < 0.5:
+            closest_dist = smin(closest_dist, dist, 0.1)
+            r = smin(r, obj[1], 0.1)
+            g = smin(g, obj[2], 0.1)
+            b = smin(b, obj[3], 0.1)
+            # r = obj[1]
+            # g = obj[2]
+            # b = obj[3]
+        elif dist < closest_dist:
             closest_dist = dist
             r = obj[1]
             g = obj[2]
@@ -29,6 +59,9 @@ def find_closest_obj(pos_x, pos_y, pos_z, object_buffer):
 
 @cuda.jit
 def calculate_normal(pos_x, pos_y, pos_z, object_buffer):
+    '''
+    Function which calculates normal to the object in the point pos_x, pos_y, pos_z
+    '''
     eps = 0.01
     normal_x = find_closest_obj(pos_x+eps, pos_y, pos_z, object_buffer)[0] - find_closest_obj(pos_x-eps, pos_y, pos_z, object_buffer)[0]
     normal_y = find_closest_obj(pos_x, pos_y+eps, pos_z, object_buffer)[0] - find_closest_obj(pos_x, pos_y-eps, pos_z, object_buffer)[0]
@@ -51,6 +84,9 @@ def calculate_normal(pos_x, pos_y, pos_z, object_buffer):
 
 @cuda.jit
 def calulate_lighting(pos_x, pos_y, pos_z, object_buffer, light_pos_x, light_pos_y, light_pos_z):
+    '''
+    Calculate lighting level in the point pos_x, pos_y, pos_z
+    '''
     normal_x, normal_y, normal_z = calculate_normal(pos_x, pos_y, pos_z, object_buffer)
     light_dir_x = light_pos_x - pos_x
     light_dir_y = light_pos_y - pos_y

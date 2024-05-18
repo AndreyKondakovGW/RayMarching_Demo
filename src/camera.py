@@ -1,11 +1,13 @@
 import numpy as np
 from src.ray_march_cuda import ray_march_kernel
-from numba import jit
 from numba import cuda
 
 #Cuda kernel for get_all_rays
 @cuda.jit
 def get_all_rays_kernel(all_rays, pixel_width, pixel_height, projection_matrix, lookAtMatrix):
+    '''
+    Cuda kernel which calculates rays from camera to every pixel and saves them to all_rays
+    '''
     x, y = cuda.grid(2)
     if x < all_rays.shape[0] and y < all_rays.shape[1]:
         ndc_x = (2.0 * x) / pixel_width - 1.0
@@ -61,23 +63,6 @@ def get_all_rays_kernel(all_rays, pixel_width, pixel_height, projection_matrix, 
         all_rays[x, y, 1] = dir_y
         all_rays[x, y, 2] = dir_z
 
-
-
-#Jitclass only support static methods
-@jit(nopython=True)
-def get_all_rays_satatic(pixel_width, pixel_height, screne_width, screne_height, projection_matrix, lookAtMatrix):
-    all_rays = np.zeros((pixel_width, pixel_height, 3), dtype=np.float64)
-    for x in range(pixel_width):
-        for y in range(pixel_height):
-            x_loc = x * screne_width - screne_width / 2
-            y_loc = y * screne_height - screne_height / 2
-            direction = np.array([x_loc, y_loc, -1, 1], dtype=np.float64)
-            direction = projection_matrix.dot(direction)
-            direction = lookAtMatrix.dot(direction)
-            all_rays[x, y] = direction[:3] / np.linalg.norm(direction[:3])
-    return all_rays
-
-#@jitclass(spec)
 class RayMarchCamera:
     def __init__(self, pos = np.array([0,0,0]), target = np.array([1,0,0]), fov = 90, screne_width = 1, screne_height = 1):
         self.pos = pos
@@ -130,10 +115,16 @@ class RayMarchCamera:
             [0, 0, b, 0]
         ], dtype=np.float64)
     
-    def get_window_content(self, pixel_width, pixel_height, world):
+    def get_window_content(self, pixel_width: int, pixel_height: int, world: list) -> np.array:
+        '''
+        Method which returns all pixel values
+        use ray_march_kernel to calculate pixel values
+        return matrix [pixel_width, pixel_height, 3]
+        '''
         output = np.zeros((pixel_width, pixel_height, 3), dtype=np.float64)
-        objects_buffer = np.array([obj.to_array() for obj in world], dtype=np.float64)
 
+        #we can not pass list of objects to cuda kernel so we need to convert it to np.array
+        objects_buffer = np.array([obj.to_array() for obj in world], dtype=np.float64)
 
         threadsperblock = (16, 16)
         blockspergrid_x = int(np.ceil(pixel_width / threadsperblock[0]))
@@ -147,8 +138,13 @@ class RayMarchCamera:
         output = d_output.copy_to_host(stream=stream)
         return (output * 255).astype(np.uint8)
 
-    def set_all_rays(self, pixel_width, pixel_height):
-        #calculate all rays directions
+    def set_all_rays(self, pixel_width: int, pixel_height: int):
+        '''
+        Calculates rays from camera to every pixel
+        you shoul call this method only one unless you change camera position
+
+        use get_all_rays_kernel to calculate rays
+        '''
         threadsperblock = (16, 16)
         blockspergrid_x = int(np.ceil(pixel_width / threadsperblock[0]))
         blockspergrid_y = int(np.ceil(pixel_height / threadsperblock[1]))
@@ -162,14 +158,4 @@ class RayMarchCamera:
                                                              pixel_width, pixel_height,
                                                              d_projetion_matrix, d_lookAtMatrix)
         self.all_rays = d_all_rays.copy_to_host(stream=stream)
-        #self.all_rays = get_all_rays_satatic(pixel_width, pixel_height, self.screne_width, self.screne_height, self.projection_matrix, self.lookAtMatrix)
-
-    def get_ray_direction(self, x, y):
-        #It just linear algebra and it just works
-        x = x * self.screne_width - self.screne_width / 2
-        y = y * self.screne_height - self.screne_height / 2
-        direction = np.array([x, y, -1, 1])
-        direction = self.projection_matrix.dot(direction)
-        direction = self.lookAtMatrix.dot(direction)
-        return direction[:3] / np.linalg.norm(direction[:3])
 
