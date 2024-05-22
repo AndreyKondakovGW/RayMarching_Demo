@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 from src.camera import RayMarchCamera
-from src.ray_marchobject import Sphere, FuzzySphere, PlaneY, Box, RoundBox
+from src.ray_marchobject import Sphere, FuzzySphere, PlaneY, Box, RoundBox, FrameBox, Torus, Cylinder, Cone
 import time
 
 class PyGameWindowRenderer:
@@ -13,7 +13,15 @@ class PyGameWindowRenderer:
         self.screen = pygame.display.set_mode((width, height))
         
         #initial set of objects
-        self.world = [Sphere(np.array([5, 0, 0], dtype=np.float64), 0.5, np.array([1, 1, 0], dtype=np.float64),1, 5)]
+        self.world = [
+            #FrameBox(np.array([5, 0, 0], dtype=np.float64),
+                            #half_sides=np.array([1, 1, 1], dtype=np.float64),
+                            #thickness = 0.1,
+                            #color = np.array([1, 1, 0], dtype=np.float64))]
+            Torus(np.array([5, 0, 0], dtype=np.float64),
+                            radi= np.array([1, 1]),
+                            color = np.array([1, 1, 0], dtype=np.float64)),]
+            #Sphere(np.array([5, 0, 0], dtype=np.float64), 0.5, np.array([1, 1, 0], dtype=np.float64),1, 5)]
              #Box(np.array([2, 0, 0], dtype=np.float64),
                             #half_sides=np.array([0.3, 0.3, 0.3], dtype=np.float64),
                             #color = np.array([1, 1, 0], dtype=np.float64),

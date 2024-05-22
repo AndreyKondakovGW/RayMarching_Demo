@@ -165,7 +165,7 @@ class FrameBox(RayMarchObject):
         return res
 
 class Torus(RayMarchObject):
-    def __init__(self, center, radi, color = np.array([1,0,0])):
+    def __init__(self, center, radi = np.array([1,1]), color = np.array([1,0,0])):
         self.id=5
         self.center = center
         self.radi = radi
