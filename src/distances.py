@@ -1,13 +1,9 @@
 import numpy as np
-import numpy.typing as npt
-from numba import cuda, float32, float64
+from numba import cuda, float32
 
 @cuda.jit(device=True)
-def distance_from_sphere(point, radius):
-    norm = 0.0
-    for i in range(point.shape[0]):
-        norm += point[i] ** 2
-    norm = norm ** 0.5
+def distance_from_sphere(point_x, point_y, point_z, radius):
+    norm = (point_x ** 2 + point_y ** 2 + point_z ** 2) ** 0.5
     return norm - radius
 
 @cuda.jit(device=True)
@@ -25,69 +21,57 @@ def distance_from_box(point, half_sides):
     return norm + min(max_q, 0)
 
 @cuda.jit(device=True)
-def distance_from_frame_box(point, half_sides, thickness):
-    for i in range(3):
-        point[i] = abs(point[i]) - half_sides[i]
-    q = cuda.local.array(3, float32)
-    for i in range(3):
-        q[i] = abs(point[i] + thickness) - thickness
-    result = cuda.local.array(3, float32)
-    for i in range(3):
-        result[i] = (np.linalg.norm([point[i], q[(i+1)%3], q[(i+2)%3]]) + 
-                     min(max(point[i], q[(i+1)%3], q[(i+2)%3]), 0))
-    return min(result[0], result[1], result[2])
+def distance_from_frame_box(point_x, point_y, point_z, half_side_x, half_side_y, half_side_z, thickness):
+    point_x = abs(point_x) - half_side_x
+    point_y = abs(point_y) - half_side_y
+    point_z = abs(point_z) - half_side_z
+    q_x = abs(point_x + thickness) - thickness
+    q_y = abs(point_y + thickness) - thickness
+    q_z = abs(point_z + thickness) - thickness
+
+    result_0 = (max(0, point_x) ** 2 + max(0, q_y) ** 2 + max(0, q_z) ** 2) ** 0.5 + min(max(point_x, q_y, q_z), 0)
+    result_1 = (max(0, q_x) ** 2 + max(0, point_y) ** 2 + max(0, q_z) ** 2) ** 0.5 + min(max(q_x, point_y, q_z), 0)
+    result_2 = (max(0, q_x) ** 2 + max(0, q_y) ** 2 + max(0, point_z) ** 2) ** 0.5 + min(max(q_x, q_y, point_z), 0)
+    
+    return min(result_0, result_1, result_2)
 
 @cuda.jit(device=True)
-def distance_from_round_box(point, half_sides, rounding):
-    q = cuda.local.array(3, float32)
-    for i in range(3):
-        q[i] = abs(point[i]) - half_sides[i] + rounding
-    max_q = 0.0
-    for i in range(3):
-        max_q = max(max_q, q[i])
-    norm = 0.0
-    for i in range(3):
-        norm += max(0, q[i]) ** 2
-    norm = norm ** 0.5
+def distance_from_round_box(point_x, point_y, point_z, half_side_x, half_side_y, half_side_z, rounding):
+    q_x = abs(point_x) - half_side_x + rounding
+    q_y = abs(point_y) - half_side_y + rounding
+    q_z = abs(point_z) - half_side_z + rounding
+    max_q = max(q_x, q_y, q_z)
+    norm = (max(0, q_x) ** 2 + max(0, q_y) ** 2 + max(0, q_z) ** 2) ** 0.5
     return norm + min(max_q, 0) - rounding
 
 @cuda.jit(device=True)
-def distance_from_torus(point, radi):
-    q = cuda.local.array(2, float32)
-    q[0] = np.linalg.norm([point[0], point[2]]) - radi[0]
-    q[1] = point[1]
-    norm = 0.0
-    for i in range(2):
-        norm += q[i] ** 2
-    norm = norm ** 0.5
-    return norm - radi[1]
+def distance_from_torus(point_x, point_y, point_z, radi_x, radi_y):
+    q_x = (point_x ** 2 + point_z ** 2) ** 0.5 - radi_x
+    q_y = point_y
+    norm = (q_x ** 2 + q_y ** 2) ** 0.5
+    return norm - radi_y
 
 @cuda.jit(device=True)
-def distance_from_cylinder(point, radius, height):
-    d = cuda.local.array(2, float32)
-    d[0] = np.linalg.norm([point[0], point[2]]) - radius
-    d[1] = abs(point[1]) - height
-    max_d = max(d[0], d[1])
-    norm = 0.0
-    for i in range(2):
-        norm += max(0, d[i]) ** 2
-    norm = norm ** 0.5
+def distance_from_cylinder(point_x, point_y, point_z, radius, height):
+    d_x = (point_x ** 2 + point_z ** 2) ** 0.5 - radius
+    d_y = abs(point_y) - height
+    max_d = max(d_x, d_y)
+    norm = (max(0, d_x) ** 2 + max(0, d_y) ** 2) ** 0.5
     return min(max_d, 0) + norm
 
 @cuda.jit(device=True)
-def distance_from_cone(point, c, height):
-    q = height * cuda.local.array(2, float32)
-    q[0] = c[0] / c[1]
-    q[1] = -1
-    w = cuda.local.array(2, float32)
-    w[0] = np.linalg.norm([point[0], point[2]])
-    w[1] = point[1]
-    a = w - q * np.clip(np.dot(w, q) / np.dot(q, q), 0, 1)
-    b = w - q * cuda.local.array(2, float32)
-    b[0] = np.clip(w[0] / q[0], 0, 1)
-    b[1] = 1
-    k = np.sign(q[1])
-    d = min(np.dot(a, a), np.dot(b, b))
-    s = max(k * (w[0] * q[1] - w[1] * q[0]), k * (w[1] - q[1]))
+def distance_from_cone(point_x, point_y, point_z, c_x, c_y, height):
+    q_x = height * c_x / c_y
+    q_y = -height
+    w_x = (point_x ** 2 + point_z ** 2) ** 0.5
+    w_y = point_y
+    dot_wq = w_x * q_x + w_y * q_y
+    dot_qq = q_x ** 2 + q_y ** 2
+    a_x = w_x - q_x * np.clip(dot_wq / dot_qq, 0, 1)
+    a_y = w_y - q_y * np.clip(dot_wq / dot_qq, 0, 1)
+    b_x = w_x - q_x * np.clip(w_x / q_x, 0, 1)
+    b_y = w_y - q_y
+    k = np.sign(q_y)
+    d = min(a_x ** 2 + a_y ** 2, b_x ** 2 + b_y ** 2)
+    s = max(k * (w_x * q_y - w_y * q_x), k * (w_y - q_y))
     return np.sqrt(d) * np.sign(s)
-
