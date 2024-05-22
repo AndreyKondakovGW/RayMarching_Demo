@@ -2,7 +2,7 @@ import numpy as np
 from numba import cuda
 import math
 
-from src.distances import sphere, fuzzy_sphere
+from src.distances import sphere, fuzzy_sphere, planey
 
 number_of_steps = 64
 min_hit_distance = 0.01
@@ -42,6 +42,8 @@ def find_closest_obj(pos_x, pos_y, pos_z, object_buffer):
             dist = sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7])
         elif obj[0] == 1:
             dist = fuzzy_sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7], obj[8])
+        elif obj[0] == 2:
+            dist = planey(pos_x, pos_y, pos_z, obj[4])
         if abs(dist - closest_dist) < 0.5:
             closest_dist = smin(closest_dist, dist, 0.1)
             r = smin(r, obj[1], 0.1)
@@ -122,6 +124,7 @@ def ray_march_kernel(result, origin_x, origin_y, origin_z, directions, object_bu
             cdist, color_r, color_g, color_b = find_closest_obj(current_position_x, current_position_y, current_position_z, object_buffer)
             if cdist < 0.01:
                 l = calulate_lighting(current_position_x, current_position_y, current_position_z, object_buffer, 0, -5, 0)
+                l = 1
                 result[x, y, 0] = color_r * l
                 result[x, y, 1] = color_g * l
                 result[x, y, 2] = color_b * l

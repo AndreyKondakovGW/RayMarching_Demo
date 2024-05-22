@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import numpy as np
 from src.camera import RayMarchCamera
-from src.ray_marchobject import Sphere, FuzzySphere
+from src.ray_marchobject import Sphere, FuzzySphere, PlaneY
 import time
 from matplotlib import transforms
 
@@ -13,7 +13,8 @@ class PyPlotRenderer:
     def __init__(self, width: int, height: int):
         self.screen_width = width
         self.screen_height = height
-        self.world = [FuzzySphere(np.array([5, 0, 0], dtype=np.float64), 1, np.array([1, 1, 0], dtype=np.float64)),
+        self.world = [PlaneY(1, np.array([1,1,1])),
+                      FuzzySphere(np.array([5, 0, 0], dtype=np.float64), 1, np.array([1, 1, 0], dtype=np.float64)),
                       Sphere(np.array([5, 0, 3], dtype=np.float64), 0.5, np.array([1, 0, 0], dtype=np.float64)),
                       Sphere(np.array([5, 0, -3], dtype=np.float64), 0.5, np.array([0, 0, 1], dtype=np.float64))]
 

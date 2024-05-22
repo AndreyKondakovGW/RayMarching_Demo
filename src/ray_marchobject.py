@@ -59,3 +59,23 @@ class FuzzySphere():
         res[5:8] = self.center
         res[8] = self.scaler
         return res
+    
+class PlaneY:
+    def __init__(self, y, color = np.array([0,1,0])):
+        self.id = 2
+        self.y = y
+        self.color = color
+
+    def distance2point(self, point):
+        return point[1] - self.y
+    
+    def get_color(self):
+        return self.color
+    
+    def to_array(self):
+        # every sphere encoded with [id, color_r, color_g, color_b, y]
+        res = np.zeros(4 + max_figure_params)
+        res[0] = self.id
+        res[1:4] = self.color
+        res[4] = self.y
+        return res
