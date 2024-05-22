@@ -91,33 +91,3 @@ def distance_from_cone(point, c, height):
     s = max(k * (w[0] * q[1] - w[1] * q[0]), k * (w[1] - q[1]))
     return np.sqrt(d) * np.sign(s)
 
-@cuda.jit
-def compute_distances(points, radii, results, shape_type):
-    i = cuda.grid(1)
-    if i < points.shape[0]:
-        if shape_type[i] == 0:
-            results[i] = distance_from_sphere(points[i], radii[i])
-        elif shape_type[i] == 1:
-            results[i] = distance_from_box(points[i], radii[i])
-        elif shape_type[i] == 2:
-            results[i] = distance_from_frame_box(points[i], radii[i][0], radii[i][1])
-        elif shape_type[i] == 3:
-            results[i] = distance_from_round_box(points[i], radii[i][0], radii[i][1])
-        elif shape_type[i] == 4:
-            results[i] = distance_from_torus(points[i], radii[i])
-        elif shape_type[i] == 5:
-            results[i] = distance_from_cylinder(points[i], radii[i][0], radii[i][1])
-        elif shape_type[i] == 6:
-            results[i] = distance_from_cone(points[i], radii[i][0], radii[i][1])
-
-# Example usage:
-points = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32)
-radii = np.array([1.0, 2.0], dtype=np.float32)
-results = np.zeros(points.shape[0], dtype=np.float32)
-shape_type = np.array([0, 1], dtype=np.int32)  # 0 for sphere, 1 for box, etc.
-
-threads_per_block = 256
-blocks_per_grid = (points.shape[0] + (threads_per_block - 1)) // threads_per_block
-
-compute_distances[blocks_per_grid, threads_per_block](points, radii, results, shape_type)
-print(results)
