@@ -5,9 +5,7 @@ from src.ray_marchobject import Sphere, FuzzySphere, PlaneY, Box, RoundBox, Fram
 import time
 
 class PyGameWindowRenderer:
-    #simple pygame logic
-    #simple class to render the game state render window from np array
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int) -> None:
         self.screen_width = width
         self.screen_height = height
         self.screen = pygame.display.set_mode((width, height))
@@ -39,11 +37,11 @@ class PyGameWindowRenderer:
         start = time.time()
         self.camera.set_all_rays(self.screen_width, self.screen_height)
         self.window_content = self.camera.get_window_content(self.screen_width, self.screen_height, self.world)
-        print(f"Time to render {width}x{height}: {time.time() - start:.2f} sec", )
+        print(f"Time to render {width}x{height}: {time.time() - start:.2f} sec")
 
-    def mainloop(self):
+    def mainloop(self) -> None:
         running = True
-        num_frames = 0 
+        num_frames = 0
         while running:
             self.screen.fill((255, 255, 255))
             if num_frames % 5 == 0:
