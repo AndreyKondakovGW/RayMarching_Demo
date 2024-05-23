@@ -28,6 +28,18 @@ Python implementation of Raymarching rendering methods. Made for Scientific pyth
   alt="Example1"
   caption="">
 
+<h2>Examples of working rendering</h2>
+<image
+  src="./examples/animation_2.gif"
+  alt="Example1"
+  caption="">
+
+<h2>Examples of working rendering</h2>
+<image
+  src="./examples/animation_3.gif"
+  alt="Example1"
+  caption="">
+
 
 <h2> Requirments </h2>
 To make project work you need have GPU with cuda instaled
