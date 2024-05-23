@@ -41,8 +41,6 @@ def mod(x, y):
 
 @cuda.jit(device=True)
 def distance_from_sphere(origin_x, origin_y, origin_z, radius, center_x, center_y, center_z, multiplier=1.0):
-
-
     origin_x = origin_x - center_x
     origin_y = origin_y - center_y
     origin_z = origin_z - center_z
@@ -61,9 +59,21 @@ def distance_from_sphere(origin_x, origin_y, origin_z, radius, center_x, center_
     return norm - radius
 
 @cuda.jit(device=True)
-def distance_from_fuzzy_sphere(origin_x, origin_y, origin_z, r, center_x, center_y, center_z, scaler):
+def distance_from_fuzzy_sphere(origin_x, origin_y, origin_z, r, center_x, center_y, center_z, scaler, mult_x, mult_y, mult_z):
     displacement = math.sin(scaler * origin_x) * math.sin(scaler * origin_y) * math.sin(scaler * origin_z) * 0.25 * r
-    return math.sqrt((origin_x - center_x) ** 2 + (origin_y - center_y) ** 2 + (origin_z - center_z) ** 2) - r + displacement
+
+    origin_x = origin_x - center_x
+    origin_y = origin_y - center_y
+    origin_z = origin_z - center_z
+
+    if mult_x != 0.0:
+        origin_x = -mult_x + mod(origin_x + mult_x, 2*mult_x)
+    if mult_y != 0.0:
+        origin_y = -mult_y + mod(origin_y + mult_y, 2*mult_y)
+    if mult_z != 0.0:
+        origin_z = -mult_z + mod(origin_z + mult_z, 2*mult_z)
+
+    return math.sqrt((origin_x) ** 2 + (origin_y) ** 2 + (origin_z) ** 2) - r + displacement
 
 @cuda.jit(device=True)
 def distance_from_planey(origin_x, origin_y, origin_z, center_y):
@@ -71,8 +81,6 @@ def distance_from_planey(origin_x, origin_y, origin_z, center_y):
 
 @cuda.jit(device=True)
 def distance_from_box(point_x, point_y, point_z, half_sides_x, half_sides_y, half_sides_z, dir_x, dir_y, dir_z, angle):
-    # for i in range(3):
-    #     q[i] = abs(point[i]) - half_sides[i]
     if angle != 0:
         point_x, point_y, point_z = rotate_point(point_x, point_y, point_z, dir_x, dir_y, dir_z, angle)
 
@@ -89,7 +97,9 @@ def distance_from_box(point_x, point_y, point_z, half_sides_x, half_sides_y, hal
     return norm + min(max_q, 0)
 
 @cuda.jit(device=True)
-def distance_from_frame_box(point_x, point_y, point_z, half_side_x, half_side_y, half_side_z, thickness):
+def distance_from_frame_box(point_x, point_y, point_z, half_side_x, half_side_y, half_side_z, thickness, dir_x, dir_y, dir_z, angle):
+    if angle != 0:
+        point_x, point_y, point_z = rotate_point(point_x, point_y, point_z, dir_x, dir_y, dir_z, angle)
     point_x = abs(point_x) - half_side_x
     point_y = abs(point_y) - half_side_y
     point_z = abs(point_z) - half_side_z
@@ -120,7 +130,9 @@ def distance_from_torus(point_x, point_y, point_z, radi_x, radi_y):
     return norm - radi_y
 
 @cuda.jit(device=True)
-def distance_from_cylinder(point_x, point_y, point_z, radius, height):
+def distance_from_cylinder(point_x, point_y, point_z, radius, height, dir_x, dir_y, dir_z, angle):
+    if angle != 0:
+        point_x, point_y, point_z = rotate_point(point_x, point_y, point_z, dir_x, dir_y, dir_z, angle)
     d_x = (point_x ** 2 + point_z ** 2) ** 0.5 - radius
     d_y = abs(point_y) - height
     max_d = max(d_x, d_y)
@@ -128,7 +140,9 @@ def distance_from_cylinder(point_x, point_y, point_z, radius, height):
     return min(max_d, 0) + norm
 
 @cuda.jit(device=True)
-def distance_from_cone(point_x, point_y, point_z, c_x, c_y, height):
+def distance_from_cone(point_x, point_y, point_z, c_x, c_y, height, angle, dir_x, dir_y, dir_z):
+    if angle != 0:
+        point_x, point_y, point_z = rotate_point(point_x, point_y, point_z, dir_x, dir_y, dir_z, angle)
     q_x = height * c_x / c_y
     q_y = -height
     w_x = (point_x ** 2 + point_z ** 2) ** 0.5

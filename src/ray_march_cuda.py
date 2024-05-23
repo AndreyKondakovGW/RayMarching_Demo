@@ -43,7 +43,7 @@ def find_closest_obj(
         if obj[0] == 0:
             dist = distance_from_sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7], obj[8] * obj[9])
         elif obj[0] == 1:
-            dist = distance_from_fuzzy_sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7], obj[8])
+            dist = distance_from_fuzzy_sphere(pos_x, pos_y, pos_z, obj[4], obj[5], obj[6], obj[7], obj[8], obj[9] * obj[12], obj[10]* obj[12], obj[11]* obj[12])
         elif obj[0] == 8:
             dist = distance_from_planey(pos_x, pos_y, pos_z, obj[4])
         elif obj[0] == 2:
@@ -51,19 +51,19 @@ def find_closest_obj(
         elif obj[0] == 3:
             dist = distance_from_round_box(pos_x - obj[8], pos_y - obj[9], pos_z - obj[10], obj[5], obj[6], obj[7], obj[4])
         elif obj[0] == 4:
-            dist = distance_from_frame_box(pos_x - obj[8], pos_y - obj[9], pos_z - obj[10], obj[5], obj[6], obj[7], obj[4])
+            dist = distance_from_frame_box(pos_x - obj[8], pos_y - obj[9], pos_z - obj[10], obj[5], obj[6], obj[7], obj[4], obj[11], obj[12], obj[13], obj[14])
         elif obj[0] == 5:
             dist = distance_from_torus(pos_x - obj[6], pos_y - obj[7], pos_z - obj[8], obj[4], obj[5])
         elif obj[0] == 6:
-            dist = distance_from_cylinder(pos_x - obj[6], pos_y - obj[7], pos_z - obj[8], obj[4], obj[5])
+            dist = distance_from_cylinder(pos_x - obj[6], pos_y - obj[7], pos_z - obj[8], obj[4], obj[5], obj[9], obj[10], obj[11], obj[12])
         elif obj[0] == 7:
-            dist = distance_from_cone(pos_x - obj[7], pos_y - obj[8], pos_z - obj[9], obj[5], obj[6], obj[4])
+            dist = distance_from_cone(pos_x - obj[7], pos_y - obj[8], pos_z - obj[9], obj[5], obj[6], obj[4], obj[10], obj[11], obj[12], obj[13])
 
-        if abs(dist - closest_dist) < 0.5:
-            closest_dist = smin(closest_dist, dist, 0.1)
-            r = smin(r, obj[1], 0.1)
-            g = smin(g, obj[2], 0.1)
-            b = smin(b, obj[3], 0.1)
+        if abs(dist - closest_dist) < 0.1:
+            closest_dist = smin(closest_dist, dist, 0.01)
+            r = r #smin(r, obj[1], 0.1)
+            g = g #smin(g, obj[2], 0.1)
+            b = b #smin(b, obj[3], 0.1)
         elif dist < closest_dist:
             closest_dist = dist
             r, g, b = obj[1], obj[2], obj[3]
