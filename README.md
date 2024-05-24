@@ -31,13 +31,19 @@ Python implementation of Raymarching rendering methods. Made for Scientific pyth
 <h2>Examples of working rendering</h2>
 <image
   src="./examples/animation_2.gif"
-  alt="Example1"
+  alt="Example2"
   caption="">
 
 <h2>Examples of working rendering</h2>
 <image
   src="./examples/animation_3.gif"
-  alt="Example1"
+  alt="Example3"
+  caption="">
+
+<h2>Examples of working rendering</h2>
+<image
+  src="./examples/animation_4.gif"
+  alt="Example4"
   caption="">
 
 

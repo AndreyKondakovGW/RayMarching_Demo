@@ -22,17 +22,19 @@ class PyPlotRenderer:
         self.window_content = self.camera.get_window_content(self.screen_width, self.screen_height, self.world.objects)
         print(f"Time to render {width}x{height}: {time.time() - start:.2f} sec", )
         self.figure  = plt.figure(figsize=(15, 15))
-        self.ax = self.figure.add_subplot(111)
-        #plt.axis('off')
+        sizes =  self.window_content.shape  
+        self.figure = plt.figure()
+        self.figure.set_size_inches(1. * sizes[0] / sizes[1], 1, forward = False)
+        self.ax = plt.Axes(self.figure, [0., 0., 1., 1.])
+        self.ax.set_axis_off()
+        self.figure.add_axes(self.ax)
 
-    def render_gif(self, seconds: int):
+    def render_gif(self, seconds: int, gif_path: str = './animation.gif'):
         def update(i):
             self.world.objects = self.world.animation(self.world.objects)
             self.window_content = self.camera.get_window_content(self.screen_width, self.screen_height, self.world.objects)
-            img = plt.imshow(np.rot90(np.rot90(np.rot90(self.window_content))))
-            plt.axis('off')
-            #plt.tight_layout()
+            img = self.ax.imshow(np.rot90(np.rot90(np.rot90(self.window_content))))
             return img,
         
         ani = FuncAnimation(self.figure, update, frames=seconds, blit=True)
-        ani.save('./animation.gif', writer='imagemagick', fps=5)
+        ani.save(gif_path, writer='imagemagick', fps=5)

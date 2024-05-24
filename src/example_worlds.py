@@ -1,6 +1,9 @@
 from src.ray_marchobject import *
 import time 
 class World:
+    '''
+    Class to store world object and animation
+    '''
     def __init__(self, objects: RayMarchObject, animation):
         self.objects = objects
         self.animation = animation
@@ -77,3 +80,20 @@ def animation_3(objects):
     return objects
 
 world_3 = World(object_list_3, animation_3)
+
+#Example 4
+
+object_list_4 = [Cone(center=np.array([3, 1, 0]),
+                        c = np.array([np.cos(np.pi/6), np.sin(np.pi/6)]),
+                        height = 1,
+                        rotation_dir = np.array([0, 1, 0]),
+                        rotation_angle = 0,
+                        color = np.array([1, 0, 0]),),]
+
+def animation_4(objects):
+    objects[0].rotation_angle += 1
+    if objects[0].rotation_angle >= 360:
+        objects[0].rotation_angle = 0
+    return objects
+
+world_4 = World(object_list_4, animation_4)

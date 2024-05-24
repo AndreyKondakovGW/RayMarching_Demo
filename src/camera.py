@@ -100,7 +100,6 @@ class RayMarchCamera:
         ])
 
         return axis_matrix.dot(position_matrix)
-        #return np.zeros((4,4))
 
     def get_projection(self):
         f = 1 / np.tan(np.radians(self.fov/2))
@@ -134,7 +133,7 @@ class RayMarchCamera:
         d_all_rays = cuda.to_device(self.all_rays, stream)
         d_output = cuda.to_device(output, stream)
         d_objects_buffer = cuda.to_device(objects_buffer, stream)
-        ray_march_kernel[blockspergrid, threadsperblock](d_output, 0,0,0, d_all_rays, d_objects_buffer)
+        ray_march_kernel[blockspergrid, threadsperblock](d_output, 0, 0, 0, d_all_rays, d_objects_buffer)
         output = d_output.copy_to_host(stream=stream)
         return (output * 255).astype(np.uint8)
 
